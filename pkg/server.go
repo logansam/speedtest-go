@@ -1,12 +1,14 @@
-package main
+package speedtest
 
 import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 )
@@ -55,7 +57,7 @@ func (b ByDistance) Less(i, j int) bool {
 	return b.Servers[i].Distance < b.Servers[j].Distance
 }
 
-func fetchServerList(user User) ServerList {
+func FetchServerList(user User) ServerList {
 	// Fetch xml server data
 	resp, err := http.Get("http://www.speedtest.net/speedtest-servers-static.php")
 	checkError(err)
@@ -185,6 +187,30 @@ func (svrs Servers) ShowResult() {
 	}
 }
 
+type Speed struct {
+	Upload   float64
+	Download float64
+}
+
+func (svrs Servers) GetResult() Speed {
+	if len(svrs) == 1 {
+		return Speed{Download: svrs[0].DLSpeed, Upload: svrs[0].ULSpeed}
+	}
+	avgDL := 0.0
+	avgUL := 0.0
+	for _, s := range svrs {
+		avgDL = avgDL + s.DLSpeed
+		avgUL = avgUL + s.ULSpeed
+	}
+	fmt.Printf("Download Avg: %5.2f Mbit/s\n", avgDL/float64(len(svrs)))
+	fmt.Printf("Upload Avg: %5.2f Mbit/s\n", avgUL/float64(len(svrs)))
+	err := svrs.checkResult()
+	if err {
+		fmt.Println("Warning: Result seems to be wrong. Please speedtest again.")
+	}
+	return Speed{Download: avgDL / float64(len(svrs)), Upload: avgUL / float64(len(svrs))}
+}
+
 func (svrs Servers) checkResult() bool {
 	errFlg := false
 	if len(svrs) == 1 {
@@ -196,4 +222,11 @@ func (svrs Servers) checkResult() bool {
 		}
 	}
 	return errFlg
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
 }

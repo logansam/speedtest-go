@@ -1,13 +1,13 @@
 package main
 
 import (
-	"gopkg.in/alecthomas/kingpin.v2"
-
+	"fmt"
 	"log"
 	"os"
-	"fmt"
 	"time"
+
 	"github.com/logansam/speedtest-go/speedtest"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
